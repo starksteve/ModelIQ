@@ -1,0 +1,7 @@
+.venv/
+__pycache__/
+*.pyc
+backend/.env
+backend/*.db
+backend/*.db-wal
+backend/*.db-shm

@@ -1,0 +1,466 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="A governed, evidence-backed data modeling workspace." />
+    <title>ModelIQ | Governed Data Modeling</title>
+    <link rel="icon" type="image/png" href="favicon.png" />
+    <link rel="stylesheet" href="styles.css?v=35" />
+    <link rel="stylesheet" href="workbench.css?v=35" />
+  </head>
+  <body>
+    <header class="app-header">
+      <div class="header-brand">
+        <span class="brand-icon" aria-hidden="true">
+          <svg viewBox="0 0 32 32" width="22" height="22" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="3" y="3" width="8" height="8" rx="2" fill="#002677"/>
+            <rect x="21" y="3" width="8" height="8" rx="2" fill="#002677"/>
+            <rect x="3" y="21" width="8" height="8" rx="2" fill="#ff612b"/>
+            <rect x="17" y="17" width="12" height="12" rx="3" fill="#002677"/>
+            <path d="M9.5 10.5 18 18M25 10.5 22.4 17M10.5 24.5 17.5 22.5" stroke="#ff612b" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+        </span>
+        <span class="brand-copy">
+          <strong class="brand-title">ModelIQ</strong>
+          <small class="brand-tagline">AI Data Modeling Assistant</small>
+        </span>
+      </div>
+      <div class="header-context">
+        <button class="icon-button" id="themeButton" type="button" title="Toggle contrast mode" aria-label="Toggle contrast mode">◐</button>
+        <button class="avatar" type="button" aria-label="Open profile">VT</button>
+      </div>
+    </header>
+
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="Primary navigation">
+        <nav>
+          <a class="nav-item" href="/home" id="navHome" title="Home"><span aria-hidden="true">⌂</span>Home</a>
+          <a class="nav-item active" href="/library" id="navLibrary" aria-current="page" title="Model library"><span aria-hidden="true">▤</span>Model library</a>
+          <a class="nav-item" href="/sessions" id="navSessions" title="Sessions"><span aria-hidden="true">▦</span>Sessions</a>
+          <a class="nav-item" href="/governance" id="navGovernance" title="Governance"><span aria-hidden="true">✓</span>Governance</a>
+          <a class="nav-item" href="/catalog" id="navCatalog" title="Catalog"><span aria-hidden="true">◇</span>Catalog</a>
+          <a class="nav-item" href="/settings" id="navSettings" title="Settings"><span aria-hidden="true">⚙</span>Settings</a>
+        </nav>
+        <div class="sidebar-sessions">
+          <button class="new-chat-button" id="newChatButton" type="button">+ New chat</button>
+          <div class="session-list" id="sessionList" aria-label="Conversations"></div>
+        </div>
+        <div class="sidebar-foot">
+          <div class="catalog-status"><span></span><div><strong>Catalog connected</strong><small>24 assets indexed</small></div></div>
+        </div>
+      </aside>
+
+      <main id="workspace">
+        <div id="workspaceContent">
+        <section class="workspace-head">
+          <div>
+            <p class="eyebrow"><span></span>MODEL WORKSPACE</p>
+            <h1>Design governed data models, faster.</h1>
+            <p class="subtitle">Translate a business requirement into reusable enterprise entities, industry-standard mappings, and production-ready artifacts &mdash; for any business.</p>
+          </div>
+          <div class="workspace-head-actions" id="workspaceHeadActions">
+            <button class="secondary-button" id="resetButton" type="button">Reset</button>
+            <div class="active-session-bar" id="activeSessionBar" hidden>
+              <label class="sr-only" for="activeSessionNameInput">Conversation name</label>
+              <input class="session-name-input" id="activeSessionNameInput" type="text" />
+              <button class="secondary-button" id="exitSessionButton" type="button" title="Exit this conversation">Exit</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="chat-thread" id="chatThread" aria-label="Conversation" aria-live="polite" hidden></section>
+
+        <section class="request-panel" aria-labelledby="request-title">
+          <div class="request-heading">
+            <div>
+              <h2 id="request-title">Business requirement</h2>
+              <p>Describe the capability and expected analytical outcome. Send a follow-up any time to tweak the model.</p>
+            </div>
+            <span class="privacy-badge">Synthetic metadata only</span>
+          </div>
+          <label class="sr-only" for="requirementInput">Business requirement</label>
+          <textarea id="requirementInput" rows="4">Create a longitudinal member data product for quality reporting. It should connect member coverage, attributed providers, clinical events, and quality measures over time.</textarea>
+          <div class="prompt-presets" aria-label="Example requirements">
+            <span>Examples</span>
+            <button type="button" data-prompt="Create a longitudinal member data product for quality reporting. Connect member coverage, attributed providers, clinical events, and quality measures over time.">Patient 360</button>
+            <button type="button" data-prompt="Model medication adherence for diabetic patients using prescription fills, clinical conditions, providers, and active insurance coverage.">Medication adherence</button>
+            <button type="button" data-prompt="Design an emergency department utilization model that connects patients, encounters, diagnoses, procedures, providers, and payer coverage.">ED utilization</button>
+          </div>
+          <div class="attach-row">
+            <input type="file" id="ddlFileInput" accept=".sql,.txt,.ddl" multiple hidden />
+            <button type="button" class="attach-btn" id="attachBtn"><span aria-hidden="true">📎</span> Attach existing DDLs</button>
+            <span class="attach-hint"><code>.sql / .txt / .ddl</code> · multiple — leave empty to create a new model; attach + describe changes to evolve one</span>
+            <ul class="attach-chips" id="ddlFileList"></ul>
+          </div>
+          <div class="prompt-presets follow-up-presets" id="followUpPresets" aria-label="Suggested follow-ups" hidden>
+            <span>Refine further</span>
+            <button type="button" data-prompt="Add a slowly changing dimension (SCD Type 2) history entity so we can track how this data changes over time.">Track history (SCD2)</button>
+            <button type="button" data-prompt="Add data quality rules for the primary keys and required fields to catch missing, duplicate, or out-of-range values.">Add data quality rules</button>
+            <button type="button" data-prompt="Add classification and masking guidance for every PHI/PII column so downstream consumers know what to restrict.">Add PHI/PII masking</button>
+            <button type="button" data-prompt="Split the largest entity into smaller, more normalized entities and update the relationships between them.">Normalize largest entity</button>
+            <button type="button" data-prompt="Add an entity that captures approvals or change history for governance and audit purposes.">Add approval/audit trail</button>
+          </div>
+          <div class="request-controls">
+            <div class="select-group">
+              <label for="industrySelect">Industry</label>
+              <select id="industrySelect">
+                <option value="healthcare">Healthcare</option>
+                <option value="fintech">Financial services</option>
+                <option value="edtech">Education</option>
+                <option value="transport">Transport &amp; logistics</option>
+                <option value="ecommerce">E-commerce &amp; retail</option>
+                <option value="telecom">Telecommunications</option>
+                <option value="generic">Other / general business</option>
+              </select>
+            </div>
+            <div class="select-group">
+              <label for="standardSelect">Reference standard</label>
+              <select id="standardSelect">
+                <option>FHIR R5 + enterprise glossary</option>
+                <option>OMOP CDM 5.5 + enterprise glossary</option>
+                <option>Enterprise glossary only</option>
+              </select>
+            </div>
+            <div class="select-group">
+              <label for="dialectSelect">Target SQL dialect</label>
+              <select id="dialectSelect">
+                <option>ANSI SQL</option>
+                <option>Snowflake</option>
+                <option>PostgreSQL</option>
+                <option>SQL Server</option>
+                <option>Oracle</option>
+                <option>Databricks</option>
+              </select>
+            </div>
+            <button class="primary-button" id="generateButton" type="button"><span>Generate model</span><span aria-hidden="true">→</span></button>
+          </div>
+        </section>
+
+        <section class="progress-strip" id="progressStrip" aria-label="Generation progress" hidden>
+          <div class="progress-copy"><span class="spinner" aria-hidden="true"></span><strong id="progressText">Extracting business concepts</strong></div>
+          <div class="progress-track"><span id="progressBar"></span></div>
+        </section>
+
+        <section class="results" id="results" aria-live="polite" hidden>
+          <p class="mode-banner" id="modeBanner" hidden></p>
+
+          <div class="results-toolbar">
+            <div class="tabs" role="tablist" aria-label="Draft views">
+              <button class="tab active" role="tab" aria-selected="true" data-tab="model">Model</button>
+              <button class="tab" role="tab" aria-selected="false" data-tab="reuse">Reuse evidence <span id="reuseTabCount">0</span></button>
+              <button class="tab" role="tab" aria-selected="false" data-tab="validation">Design review <span id="reviewTabCount">0</span></button>
+              <button class="tab" role="tab" aria-selected="false" data-tab="er">ER diagram</button>
+              <button class="tab" role="tab" aria-selected="false" data-tab="dfd">DFD</button>
+              <button class="tab" role="tab" aria-selected="false" data-tab="quality">Data quality <span id="dqTabCount">0</span></button>
+              <button class="tab" role="tab" aria-selected="false" data-tab="star">Star / SF</button>
+              <button class="tab" role="tab" aria-selected="false" data-tab="impact">Impact</button>
+            </div>
+            <div class="export-wrap">
+              <span class="ddl-source-badge" id="ddlSourceBadge" hidden></span>
+              <button class="secondary-button" id="exportButton" type="button">Export artifacts <span aria-hidden="true">▾</span></button>
+              <div class="export-menu" id="exportMenu" hidden>
+                <button type="button" data-export="ddl">SQL DDL</button>
+                <button type="button" data-export="index_ddl">Index recommendations</button>
+                <button type="button" data-export="dq_ddl">Data quality SQL</button>
+                <button type="button" data-export="contract">Data contract</button>
+                <button type="button" data-export="dictionary">Data dictionary</button>
+                <button type="button" data-export="rbac_sql">RBAC / tokenization SQL</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="tab-panel active" id="modelPanel" role="tabpanel">
+            <div class="status-banner" id="modelStatusBanner">
+              <span class="status-dot-lg"></span>
+              <strong id="statusBannerTitle">Draft model</strong>
+              <span class="status-desc" id="statusBannerDesc">This model is a governed draft awaiting review.</span>
+              <span class="status-updated" id="statusUpdated">Last updated just now</span>
+            </div>
+            <div class="summary-band">
+              <div><strong id="entityCount">0</strong><span>Entities</span></div>
+              <div class="metric reuse"><strong id="reuseCount">0</strong><span>Reused assets</span></div>
+              <div class="metric extend"><strong id="extendCount">0</strong><span>Extend</span></div>
+              <div><strong id="newCount">0</strong><span>New entities</span></div>
+              <div class="metric review"><strong id="governanceReviewCount">0</strong><span>Review</span></div>
+              <div class="metric phi"><strong id="phiColumnCount">0</strong><span>PHI/PII columns</span></div>
+              <span class="draft-state"><span aria-hidden="true">●</span>Draft for review</span>
+            </div>
+            <div class="model-layout">
+              <div class="diagram-area">
+                <div class="diagram-toolbar">
+                  <div>
+                    <h2>Longitudinal member quality model</h2>
+                    <p>Logical view · generated just now</p>
+                  </div>
+                  <button class="icon-button" type="button" title="Fit model to view" aria-label="Fit model to view">⊙</button>
+                </div>
+                <div class="entity-grid" id="entityGrid"></div>
+              </div>
+              <aside class="evidence-panel" aria-label="Selected entity evidence">
+                <div class="evidence-panel-head">
+                  <div><p class="eyebrow">SELECTED ENTITY</p><h2 id="selectedEntityName">Member</h2></div>
+                </div>
+                <p id="selectedEntityDefinition">A person eligible for or enrolled in a health benefit plan.</p>
+                <div class="gauge-row">
+                  <svg class="gauge-ring" id="gaugeRing" width="64" height="64" viewBox="0 0 64 64" aria-hidden="true">
+                    <circle class="gauge-track" cx="32" cy="32" r="26" fill="none" stroke-width="7"></circle>
+                    <circle class="gauge-fill" id="gaugeFill" cx="32" cy="32" r="26" fill="none" stroke-width="7" transform="rotate(-90 32 32)"></circle>
+                    <text id="gaugeLabel" x="32" y="37" text-anchor="middle">96%</text>
+                  </svg>
+                  <div class="gauge-copy"><strong id="gaugeFieldSummary">5 of 6 fields reused</strong><span>Reuse percentage</span></div>
+                </div>
+                <div class="evidence-chips" id="selectedEvidenceChips"></div>
+                <dl>
+                  <div><dt>Recommendation</dt><dd><span class="status-dot reused"></span><span id="selectedDecision">Reuse approved asset</span></dd></div>
+                  <div><dt>Enterprise match</dt><dd id="selectedMatch">MEMBER_CORE · 96%</dd></div>
+                  <div><dt>Domain concept</dt><dd id="selectedConcept">Patient</dd></div>
+                  <div><dt>Standard mappings</dt><dd id="selectedStandardsMapping">FHIR Patient · OMOP PERSON</dd></div>
+                  <div><dt>Classification</dt><dd id="selectedClassification">Restricted / PHI</dd></div>
+                  <div><dt>Approval</dt><dd><select aria-label="Entity approval status"><option>Pending review</option><option>Approved</option><option>Needs revision</option></select></dd></div>
+                </dl>
+                <div class="rationale"><strong>Why this asset?</strong><p id="selectedRationale">The approved asset covers enterprise member identity and avoids creating a second person identifier.</p></div>
+                <div class="rationale index-reco" id="selectedIndexesBlock" hidden><strong>Recommended indexes</strong><ul id="selectedIndexes" class="index-reco-list"></ul></div>
+                <div class="rationale"><strong>Evidence</strong><ul id="selectedEvidence"></ul></div>
+                <div class="evidence-actions">
+                  <button class="primary-button" id="generateDraftButton" type="button"><span>Generate governed draft</span></button>
+                  <button class="secondary-button" id="viewEvidenceButton" type="button">View evidence <span aria-hidden="true">→</span></button>
+                </div>
+              </aside>
+            </div>
+          </div>
+
+          <div class="tab-panel" id="reusePanel" role="tabpanel" hidden>
+            <div class="table-heading"><div><h2>Candidate enterprise assets</h2><p>Matches combine business meaning, schema structure, and glossary alignment.</p></div><span id="reuseRecommendedCount">0 recommended</span></div>
+            <div class="data-table-wrap"><table><thead><tr><th>Proposed entity</th><th>Existing asset</th><th>Match</th><th>Evidence</th><th>Decision</th></tr></thead><tbody id="reuseTable"></tbody></table></div>
+          </div>
+
+          <div class="tab-panel" id="validationPanel" role="tabpanel" hidden>
+            <div class="review-header-row">
+              <div><h2>Design review</h2><p>LLM-identified risks against the proposed model.</p></div>
+              <div class="review-progress-wrap">
+                <span>Review progress</span>
+                <div class="review-progress-track"><span id="reviewProgressBar" style="width:0%"></span></div>
+                <strong id="reviewProgressLabel">0 / 0</strong>
+              </div>
+              <div class="review-legend">
+                <span class="review-score" id="reviewScore">0 findings</span>
+                <span><span class="legend-dot high"></span>High</span>
+                <span><span class="legend-dot medium"></span>Medium</span>
+                <span><span class="legend-dot low"></span>Low</span>
+                <span><span class="legend-dot privacy"></span>Privacy</span>
+              </div>
+            </div>
+            <div class="review-list" id="reviewList"></div>
+          </div>
+
+          <div class="tab-panel" id="erPanel" role="tabpanel" hidden>
+            <div class="table-heading"><div><h2>Entity–relationship diagram</h2><p>Entities and the foreign-key relationships inferred between them.</p></div><span id="erRelCount">0 relationships</span></div>
+            <div class="feature-canvas" id="erCanvas"></div>
+            <div class="data-table-wrap" style="margin-top:16px"><table><thead><tr><th>Parent (one)</th><th>Child (many)</th><th>Via foreign key</th><th>Cardinality</th></tr></thead><tbody id="erTable"></tbody></table></div>
+          </div>
+
+          <div class="tab-panel" id="dfdPanel" role="tabpanel" hidden>
+            <div class="table-heading"><div><h2>Data flow diagram</h2><p>Source systems → ingestion → data stores → serving → consumers.</p></div></div>
+            <div class="feature-canvas" id="dfdCanvas"></div>
+          </div>
+
+          <div class="tab-panel" id="qualityPanel" role="tabpanel" hidden>
+            <div class="table-heading"><div><h2>Data quality validation</h2><p>Executable checks derived from model grain, keys, relationships, and business constraints.</p></div><button class="secondary-button" id="exportQualityBtn" type="button">Export rule DDL</button></div>
+            <div class="dq-summary" aria-label="Data quality rule summary">
+              <div><strong id="dqRuleCount">0</strong><span>Total rules</span></div>
+              <div><strong id="dqErrorCount">0</strong><span>Error severity</span></div>
+              <div><strong id="dqEntityCount">0</strong><span>Entities covered</span></div>
+              <div><strong id="dqPhiCount">0</strong><span>Access-control rules</span></div>
+            </div>
+            <div class="dq-layout">
+              <div class="dq-rule-list" id="dqRuleList"></div>
+              <aside class="dq-query-panel" aria-label="Selected validation query">
+                <div class="dq-query-head"><div><span>SELECTED CHECK</span><strong id="dqSelectedRule">Choose a rule</strong></div><button class="secondary-button" id="copyQualityQueryBtn" type="button">Copy query</button></div>
+                <p id="dqSelectedDescription">Select a rule to inspect its executable violation query.</p>
+                <pre class="feature-code" id="dqQueryCode">-- Select a rule to preview SQL</pre>
+              </aside>
+            </div>
+          </div>
+
+          <div class="tab-panel" id="starPanel" role="tabpanel" hidden>
+            <div class="table-heading"><div><h2>Star / Snowflake schema</h2><p id="starSummary">Facts and dimensions derived from the model.</p></div><button class="secondary-button" id="copyStarBtn" type="button">Copy dimensional DDL</button></div>
+            <div id="starFacts" class="feature-cards"></div>
+            <div class="data-table-wrap" style="margin-top:8px"><table><thead><tr><th>Dimension</th><th>Attributes</th><th>Normalization</th></tr></thead><tbody id="starDims"></tbody></table></div>
+            <pre class="feature-code" id="starCode" style="margin-top:16px"></pre>
+          </div>
+
+          <div class="tab-panel" id="impactPanel" role="tabpanel" hidden>
+            <div class="table-heading"><div><h2>Impact analysis</h2><p id="impactSummary">Blast radius of changing each entity — dependents and impacted domains.</p></div></div>
+            <div class="feature-note" id="impactHelp"></div>
+            <div id="impactCards" class="feature-cards"></div>
+          </div>
+        </section>
+        </div>
+
+        <section class="coming-soon" id="comingSoon" hidden>
+          <button type="button" class="secondary-button" id="comingSoonBack">← Back to workspace</button>
+          <p class="eyebrow"><span></span><span id="comingSoonEyebrow">PLANNED</span></p>
+          <h1 id="comingSoonTitle">Governance</h1>
+          <p class="subtitle" id="comingSoonSubtitle"></p>
+          <ul id="comingSoonList"></ul>
+        </section>
+
+        <section class="governance-view" id="governanceView" hidden aria-labelledby="governance-title">
+          <div class="view-head">
+            <div>
+              <p class="eyebrow"><span></span>GOVERNANCE</p>
+              <h1 id="governance-title">Model governance</h1>
+              <p class="subtitle">Track approvals, run policy checks, review the audit trail, and export any generated model as a formatted PDF.</p>
+            </div>
+            <div class="view-head-actions">
+              <button class="secondary-button" id="governanceRefresh" type="button">Refresh</button>
+              <button class="secondary-button" id="governanceAuditToggle" type="button">Audit trail</button>
+            </div>
+          </div>
+          <div class="gov-metrics" id="govMetrics"></div>
+          <div class="data-table-wrap gov-table-wrap">
+            <table class="gov-table">
+              <thead>
+                <tr><th>Model</th><th>Industry</th><th>Entities</th><th>PHI/PII cols</th><th>Status</th><th>Actions</th></tr>
+              </thead>
+              <tbody id="governanceTable"></tbody>
+            </table>
+          </div>
+          <p class="gov-empty" id="governanceEmpty" hidden>No models generated yet &mdash; create one in the workspace first.</p>
+
+          <section class="gov-audit" id="govAuditPanel" hidden>
+            <div class="view-head">
+              <div><p class="eyebrow"><span></span>AUDIT TRAIL</p><h2 id="govAuditTitle">Audit trail</h2><p class="subtitle" id="govAuditSubtitle">Append-only log of governance actions.</p></div>
+              <button class="secondary-button" id="govAuditClose" type="button">Close</button>
+            </div>
+            <ul class="audit-list" id="auditList"></ul>
+            <p class="gov-empty" id="auditEmpty" hidden>No audit events recorded yet.</p>
+          </section>
+        </section>
+
+        <div class="gov-modal" id="policyModal" hidden>
+          <div class="gov-modal-card" role="dialog" aria-labelledby="policyModalTitle" aria-modal="true">
+            <div class="gov-modal-head">
+              <div><p class="eyebrow">POLICY CHECKS</p><h2 id="policyModalTitle">Policy checks</h2></div>
+              <button class="icon-button" id="policyModalClose" type="button" aria-label="Close policy checks">×</button>
+            </div>
+            <div class="policy-legend" id="policyCounts"></div>
+            <div class="policy-list" id="policyList"></div>
+            <p class="gov-empty" id="policyEmpty" hidden>No policy findings &mdash; this model is clear.</p>
+          </div>
+        </div>
+
+        <section class="catalog-view" id="catalogView" hidden aria-labelledby="catalog-title">
+          <div class="view-head">
+            <div>
+              <p class="eyebrow"><span></span>CATALOG</p>
+              <h1 id="catalog-title">Reference standards catalog</h1>
+              <p class="subtitle">Browse the interoperability standards ModelIQ aligns to, by industry, and add your own.</p>
+            </div>
+            <button class="primary-button" id="addStandardButton" type="button"><span>+ Add standard</span></button>
+          </div>
+
+          <form class="add-standard-form" id="addStandardForm" hidden>
+            <div class="asf-row">
+              <div class="select-group">
+                <label for="asfIndustrySelect">Industry</label>
+                <select id="asfIndustrySelect">
+                  <option value="healthcare">Healthcare</option>
+                  <option value="fintech">Financial services</option>
+                  <option value="edtech">Education</option>
+                  <option value="transport">Transport &amp; logistics</option>
+                  <option value="ecommerce">E-commerce &amp; retail</option>
+                  <option value="telecom">Telecommunications</option>
+                  <option value="generic">Other / general business</option>
+                  <option value="__new__">+ New industry…</option>
+                </select>
+              </div>
+              <div class="select-group" id="asfNewIndustryGroup" hidden>
+                <label for="asfNewIndustry">New industry key</label>
+                <input type="text" id="asfNewIndustry" placeholder="e.g. energy" />
+              </div>
+              <div class="select-group asf-grow">
+                <label for="asfName">Standard name</label>
+                <input type="text" id="asfName" placeholder="e.g. ISO 50001 energy management" />
+              </div>
+            </div>
+            <div class="select-group">
+              <label for="asfDescription">What it means</label>
+              <textarea id="asfDescription" rows="2" placeholder="Short plain-language description of the standard and when to use it."></textarea>
+            </div>
+            <div class="asf-actions">
+              <button type="button" class="secondary-button" id="asfCancel">Cancel</button>
+              <button type="submit" class="primary-button"><span>Save standard</span></button>
+            </div>
+          </form>
+
+          <div class="catalog-groups" id="catalogGroups"></div>
+        </section>
+
+        <section class="home-guide" id="homeGuide" hidden>
+          <p class="eyebrow"><span></span>GETTING STARTED</p>
+          <h1>Welcome to ModelIQ.</h1>
+          <p class="subtitle">Turn a plain-language business requirement into a governed, reusable data model in four steps &mdash; for any industry.</p>
+          <ol class="guide-steps">
+            <li><span class="guide-step-num">1</span><div><strong>Pick your industry and describe the requirement</strong><span>Choose the closest industry, then write what you need to model, or start from an example prompt.</span></div></li>
+            <li><span class="guide-step-num">2</span><div><strong>Generate the model</strong><span>ModelIQ extracts entities and matches them against certified enterprise assets in the Catalog.</span></div></li>
+            <li><span class="guide-step-num">3</span><div><strong>Review reuse evidence</strong><span>Check the Reuse evidence tab to see why each entity was matched, extended, or proposed as new.</span></div></li>
+            <li><span class="guide-step-num">4</span><div><strong>Resolve design review findings</strong><span>Work through the flagged risks in Design review, then export governed DDL, contracts, and dictionaries.</span></div></li>
+          </ol>
+          <h2 class="standards-guide-title">Which standard should I use?</h2>
+          <p class="subtitle">ModelIQ aligns entities to the interoperability standard that matches your industry.</p>
+          <div class="standards-guide" id="standardsGuide"></div>
+          <button type="button" class="primary-button" id="homeGetStartedButton"><span>Start a new model</span><span aria-hidden="true">→</span></button>
+        </section>
+
+        <section class="session-manager" id="sessionManager" hidden aria-labelledby="session-manager-title">
+          <div class="session-manager-head">
+            <div>
+              <p class="eyebrow"><span></span>SESSIONS</p>
+              <h1 id="session-manager-title">Your conversations</h1>
+              <p class="subtitle">Open, rename, or delete a saved conversation. Everything here is stored in the backend and survives a restart.</p>
+            </div>
+            <button class="primary-button" id="managerNewChatButton" type="button"><span>+ New chat</span></button>
+          </div>
+          <div class="session-card-grid" id="sessionCardGrid"></div>
+          <p class="session-manager-empty" id="sessionManagerEmpty" hidden>No conversations yet &mdash; start a new chat to create one.</p>
+        </section>
+      </main>
+    </div>
+
+    <dialog class="entity-dialog" id="entityDialog" aria-labelledby="entityDialogTitle">
+      <div class="entity-dialog-head">
+        <div>
+          <p class="eyebrow">ENTITY DATA DICTIONARY</p>
+          <h2 id="entityDialogTitle">Entity details</h2>
+          <p id="entityDialogDefinition" class="entity-dialog-definition"></p>
+        </div>
+        <button class="icon-button" id="closeEntityDialog" type="button" title="Close entity details" aria-label="Close entity details">×</button>
+      </div>
+      <div class="entity-dialog-meta" id="entityDialogMeta"></div>
+      <section class="entity-dialog-section" aria-labelledby="entitySchemaTitle">
+        <div class="table-heading"><div><h3 id="entitySchemaTitle">Schema and column dictionary</h3><p>Logical definitions inferred from the governed model.</p></div></div>
+        <div class="data-table-wrap entity-dialog-table"><table><thead><tr><th>Column</th><th>Type</th><th>Role</th><th>Privacy</th><th>Definition</th></tr></thead><tbody id="entityDictionaryBody"></tbody></table></div>
+      </section>
+      <section class="entity-dialog-section" aria-labelledby="entitySamplesTitle">
+        <div class="table-heading"><div><h3 id="entitySamplesTitle">Sample records</h3><p>Illustrative synthetic values for shape and review only.</p></div><span id="entitySampleCount">0 rows</span></div>
+        <div class="data-table-wrap entity-dialog-table"><table><thead id="entitySamplesHead"></thead><tbody id="entitySamplesBody"></tbody></table></div>
+      </section>
+      <section class="entity-dialog-section" aria-labelledby="entityDdlTitle">
+        <div class="table-heading">
+          <div><h3 id="entityDdlTitle">Table DDL</h3><p>CREATE TABLE for <span id="entityDdlDialect">ANSI SQL</span> · uses the dialect picker above.</p></div>
+          <div class="ddl-scope-toggle" role="group" aria-label="DDL scope">
+            <button type="button" class="ddl-scope-btn active" data-ddl-scope="table">This table</button>
+            <button type="button" class="ddl-scope-btn" data-ddl-scope="schema">Full schema</button>
+          </div>
+          <button class="secondary-button" id="copyEntityDdlBtn" type="button">Copy DDL</button>
+        </div>
+        <pre class="feature-code" id="entityDdlCode"></pre>
+      </section>
+    </dialog>
+
+    <div class="toast" id="toast" role="status" hidden></div>
+    <script src="app.js?v=35"></script>
+  </body>
+</html>
