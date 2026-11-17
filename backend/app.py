@@ -22,7 +22,7 @@ import prompts
 import session_store
 import standards_library
 from clinical_concepts import CANONICAL_CONCEPTS, infer_concept, standards_mapping
-from llm_client import CHAT_DEPLOYMENT, GENERATION_SEED, get_client, is_configured, normalize_chat_kwargs
+from llm_client import CHAT_DEPLOYMENT, GENERATION_SEED, extract_chat_content, get_client, is_configured, normalize_chat_kwargs
 from rag.catalog import CATALOG_INDUSTRIES
 from rag.retriever import best_match
 
@@ -238,7 +238,7 @@ def generate(payload: GenerateRequest):
                     model=CHAT_DEPLOYMENT, messages=messages, temperature=0.2, seed=GENERATION_SEED
                 )
                 resp = client.chat.completions.create(**chat_kwargs)
-                out = prompts.parse_model_response(resp.choices[0].message.content)
+                out = prompts.parse_model_response(extract_chat_content(resp))
                 if out.get("entities"):
                     model_output = {
                         "entities": out["entities"],
@@ -294,7 +294,7 @@ def generate(payload: GenerateRequest):
             seed=GENERATION_SEED,
         )
         response = client.chat.completions.create(**chat_kwargs)
-        raw_text = response.choices[0].message.content
+        raw_text = extract_chat_content(response)
         model_output = prompts.parse_model_response(raw_text)
     except Exception as e:
         logger.error("LLM generation failed: %s", e)
@@ -359,7 +359,7 @@ def refine(payload: RefineRequest):
             seed=GENERATION_SEED,
         )
         response = client.chat.completions.create(**chat_kwargs)
-        raw_text = response.choices[0].message.content
+        raw_text = extract_chat_content(response)
         model_output = prompts.parse_model_response(raw_text)
     except Exception as e:
         logger.error("LLM refine failed: %s", e)

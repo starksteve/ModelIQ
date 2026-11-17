@@ -18,6 +18,7 @@ If neither is configured, get_client() returns None and callers must report
 import os
 import logging
 from functools import lru_cache
+from urllib.parse import urlparse
 
 # Use the OS certificate store (Windows) so requests through a corporate
 # SSL-inspection proxy trust the enterprise root CA. Must run before httpx/openai
@@ -142,11 +143,32 @@ def is_configured() -> bool:
 
 def normalize_chat_kwargs(**kwargs):
     """gpt-5* reasoning deployments reject temperature/top_p and use
-    max_completion_tokens instead of max_tokens - strip/rename as needed."""
+    max_completion_tokens instead of max_tokens - strip/rename as needed.
+    Some OpenAI-compatible endpoints do not handle the optional seed field."""
     model = str(kwargs.get("model", "")).lower()
+    provider_host = urlparse(OPENAI_BASE_URL).hostname if USE_OPENAI_COMPATIBLE else None
+    if provider_host in {"generativelanguage.googleapis.com", "api.groq.com"}:
+        kwargs.pop("seed", None)
+    if provider_host == "api.groq.com":
+        kwargs.setdefault("max_tokens", 6000)
     if model.startswith("gpt-5"):
         for param in ("temperature", "top_p", "frequency_penalty", "presence_penalty"):
             kwargs.pop(param, None)
         if "max_tokens" in kwargs and "max_completion_tokens" not in kwargs:
             kwargs["max_completion_tokens"] = kwargs.pop("max_tokens")
     return kwargs
+
+
+def extract_chat_content(response) -> str:
+    """Read chat content from either a standard completion or a plain-text response."""
+    if isinstance(response, str):
+        return response
+
+    choices = getattr(response, "choices", None)
+    if not choices:
+        raise ValueError("LLM returned an unsupported chat completion response.")
+
+    content = getattr(choices[0].message, "content", None)
+    if not isinstance(content, str):
+        raise ValueError("LLM returned no text in its chat completion.")
+    return content

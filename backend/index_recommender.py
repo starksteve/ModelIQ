@@ -2,7 +2,7 @@
 import json
 import re
 
-from llm_client import GENERATION_SEED, normalize_chat_kwargs
+from llm_client import GENERATION_SEED, extract_chat_content, normalize_chat_kwargs
 
 
 TRADITIONAL_INDEX_DIALECTS = {"PostgreSQL", "SQL Server", "Oracle"}
@@ -184,7 +184,7 @@ def recommend_indexes(
     )
     try:
         response = client.chat.completions.create(**kwargs)
-        raw_text = response.choices[0].message.content
+        raw_text = extract_chat_content(response)
     except Exception as exc:
         raise IndexRecommendationError(f"index recommender model call failed: {exc}") from exc
     recommendations = validate_recommendations(_parse_json(raw_text), entities)

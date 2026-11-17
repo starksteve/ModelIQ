@@ -15,7 +15,7 @@ is always validated before use.
 import json
 import re
 
-from llm_client import GENERATION_SEED, normalize_chat_kwargs
+from llm_client import GENERATION_SEED, extract_chat_content, normalize_chat_kwargs
 
 SUPPORTED_DIALECTS = [
     "ANSI SQL",
@@ -73,5 +73,5 @@ def generate_llm_ddl(client, deployment: str, entities: list[dict], dialect: str
     messages = _build_messages(entities, dialect)
     chat_kwargs = normalize_chat_kwargs(model=deployment, messages=messages, temperature=0.1, seed=GENERATION_SEED)
     response = client.chat.completions.create(**chat_kwargs)
-    raw_text = response.choices[0].message.content or ""
+    raw_text = extract_chat_content(response)
     return _strip_code_fence(raw_text)

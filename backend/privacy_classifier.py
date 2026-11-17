@@ -1,7 +1,7 @@
 """Model-driven, validated column-level PHI/PII classification."""
 import json
 
-from llm_client import GENERATION_SEED, normalize_chat_kwargs
+from llm_client import GENERATION_SEED, extract_chat_content, normalize_chat_kwargs
 
 
 ALLOWED_CATEGORIES = {"NONE", "PII", "PHI"}
@@ -297,7 +297,7 @@ def classify_fields(client, deployment: str, requirement: str, industry: str, en
     )
     try:
         response = client.chat.completions.create(**kwargs)
-        raw_text = response.choices[0].message.content
+        raw_text = extract_chat_content(response)
     except Exception as exc:
         raise PrivacyClassificationError(f"privacy classifier model call failed: {exc}") from exc
     classifications = validate_classifications(_parse_json(raw_text), entities)
